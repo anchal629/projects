@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Deadlock Detection using RAG</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    
+    #graph-container {
+      margin-bottom: 20px;
+    }
+    
+    #controls {
+      margin-bottom: 20px;
+    }
+    
+    #output {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Deadlock Detection using RAG</h1>
+  
+  <div id="graph-container">
+    <h2>Resource Allocation Graph</h2>
+    <canvas id="graph"></canvas>
+  </div>
+  
+  <div id="controls">
+    <h2>Controls</h2>
+    <button onclick="addProcess()">Add Process</button>
+    <button onclick="addResource()">Add Resource</button>
+    <button onclick="requestResource()">Request Resource</button>
+    <button onclick="releaseResource()">Release Resource</button>
+    <button onclick="detectDeadlock()">Detect Deadlock</button>
+  </div>
+  
+  <div id="output"></div>
+  
+  <script>
+    // Global Variables
+    let graphCanvas = document.getElementById("graph");
+    let graphContext = graphCanvas.getContext("2d");
+    let nodes = [];
+    let edges = [];
+    
+    // Functions
+    function drawGraph() {
+      graphContext.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+      
+      // Draw edges
+      for (let edge of edges) {
+        let from = edge.from;
+        let to = edge.to;
+        
+        graphContext.beginPath();
+        graphContext.moveTo(from.x, from.y);
+        graphContext.lineTo(to.x, to.y);
+        graphContext.strokeStyle = edge.color;
+        graphContext.lineWidth = 2;
+        graphContext.stroke();
+      }
+      
+      // Draw nodes
+      for (let node of nodes) {
+        graphContext.beginPath();
+        graphContext.arc(node.x, node.y, 20, 0, 2 * Math.PI);
+        graphContext.fillStyle = node.color;
+        graphContext.fill();
+        graphContext.strokeStyle = "#000";
+        graphContext.lineWidth = 2;
+        graphContext.stroke();
+        
+        graphContext.fillStyle = "#000";
+        graphContext.textAlign = "center";
+        graphContext.fillText(node.label, node.x, node.y + 8);
+      }
+    }
+    
+    function addProcess() {
+      let processLabel = "P" + (nodes.length + 1);
+      let processNode = { label: processLabel, x: 50, y: 50 + nodes.length * 80, color: "#ff0000" };
+      nodes.push(processNode);
+      drawGraph();
+    }
+    
+    function addResource() {
+      let resourceLabel = "R" + (nodes.length + 1);
+      let resourceNode = { label: resourceLabel, x: 300, y: 50 + nodes.length * 80, color: "#00ff00" };
+      nodes.push(resourceNode);
+      drawGraph();
+    }
+    
+    function requestResource() {
+      let processIndex = Math.floor(Math.random() * nodes.length);
+      let resourceIndex = Math.floor(Math.random() * nodes.length);
+      
+      if (nodes[processIndex].color === "#ff0000" && nodes[resourceIndex].color === "#00ff00") {
+        let edge = { from: nodes[processIndex], to: nodes[resourceIndex], color: "#0000ff" };
+        edges.push(edge);
+        drawGraph();
+      }
+    }
+    
+    function releaseResource() {
+      if (edges.length > 0) {
+        let edgeIndex = Math.floor(Math.random() * edges.length);
+        edges.splice(edgeIndex, 1);
+        drawGraph();
+      }
+    }
+    
+    function detectDeadlock() {
+      let processes = [];
+      let resources = [];
+      
+      // Create process and resource lists
+      for (let node of nodes) {
+        if (node.color === "#ff0000") {
+          processes.push(node.label);
+        } else if (node.color === "#00ff00") {
+          resources.push(node.label);
+        }
+      }
+      
+      let allocationMatrix = [];
+      let requestMatrix = [];
+      
+      // Initialize allocation and request matrices
+      for (let i = 0; i < processes.length; i++) {
+        allocationMatrix[i] = [];
+        requestMatrix[i] = [];
+        
+        for (let j = 0; j < resources.length; j++) {
+          allocationMatrix[i][j] = 0;
+          requestMatrix[i][j] = 0;
+        }
+      }
+      
+      // Populate allocation and request matrices
+      for (let edge of edges) {
+        let fromIndex = processes.indexOf(edge.from.label);
+        let toIndex = resources.indexOf(edge.to.label);
+        
+        allocationMatrix[fromIndex][toIndex] += 1;
+        
+        if (edge.color === "#0000ff") {
+          requestMatrix[fromIndex][toIndex] += 1;
+        }
+      }
+      
+      // Perform deadlock detection using RAG algorithm
+      let work = Array.from(resources);
+      let finish = new Array(processes.length).fill(false);
+      let safeSequence = [];
+      
+      while (true) {
+        let found = false;
+        
+        for (let i = 0; i < processes.length; i++) {
+          if (!finish[i] && checkRequest(requestMatrix[i], work)) {
+            work = addArrays(work, allocationMatrix[i]);
+            finish[i] = true;
+            safeSequence.push(processes[i]);
+            found = true;
+          }
+        }
+        
+        if (!found) {
+          break;
+        }
+      }
+      
+      // Check for deadlock
+      if (safeSequence.length === processes.length) {
+        document.getElementById("output").textContent = "No deadlock detected. Safe sequence: " + safeSequence.join(" -> ");
+      } else {
+        document.getElementById("output").textContent = "Deadlock detected!";
+      }
+    }
+    
+    function checkRequest(request, work) {
+      for (let i = 0; i < request.length; i++) {
+        if (request[i] > work[i]) {
+          return false;
+        }
+      }
+      
+      return true;
+    }
+    
+    function addArrays(array1, array2) {
+      let result = [];
+      
+      for (let i = 0; i < array1.length; i++) {
+        result[i] = array1[i] + array2[i];
+      }
+      
+      return result;
+    }
+    
+    // Initial setup
+    graphCanvas.width = 500;
+    graphCanvas.height = 500;
+    
+    // Event listeners
+    graphCanvas.addEventListener("mousedown", function(event) {
+      let rect = graphCanvas.getBoundingClientRect();
+      let mouseX = event.clientX - rect.left;
+      let mouseY = event.clientY - rect.top;
+      
+      for (let i = 0; i < nodes.length; i++) {
+        let node = nodes[i];
+        let distance = Math.sqrt(Math.pow(mouseX - node.x, 2) + Math.pow(mouseY - node.y, 2));
+        
+        if (distance <= 20) {
+          if (event.button === 0) {
+            node.x = mouseX;
+            node.y = mouseY;
+            drawGraph();
+          } else if (event.button === 2) {
+            let index = nodes.indexOf(node);
+            nodes.splice(index, 1);
+            
+            for (let j = edges.length - 1; j >= 0; j--) {
+              let edge = edges[j];
+              
+              if (edge.from === node || edge.to === node) {
+                edges.splice(j, 1);
+              }
+            }
+            
+            drawGraph();
+          }
+          
+          break;
+        }
+      }
+    });
+    
+    // Initial draw
+    drawGraph();
+  </script>
+</body>
+</html>

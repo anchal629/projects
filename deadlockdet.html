@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deadlock Detection Simulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .table {
+            border-collapse: collapse;
+        }
+
+        .table td {
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+
+        .table th {
+            padding: 8px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+        }
+
+        .highlight {
+            background-color: yellow;
+        }
+
+        .button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <table class="table">
+            <caption><strong>Resource Allocation</strong></caption>
+            <thead>
+                <tr>
+                    <th>Process</th>
+                    <th>R0</th>
+                    <th>R1</th>
+                    <th>R2</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>P0</td>
+                    <td id="p0-r0">0</td>
+                    <td id="p0-r1">1</td>
+                    <td id="p0-r2">0</td>
+                </tr>
+                <tr>
+                    <td>P1</td>
+                    <td id="p1-r0">2</td>
+                    <td id="p1-r1">0</td>
+                    <td id="p1-r2">0</td>
+                </tr>
+                <tr>
+                    <td>P2</td>
+                    <td id="p2-r0">3</td>
+                    <td id="p2-r1">0</td>
+                    <td id="p2-r2">2</td>
+                </tr>
+                <tr>
+                    <td>P3</td>
+                    <td id="p3-r0">2</td>
+                    <td id="p3-r1">1</td>
+                    <td id="p3-r2">1</td>
+                </tr>
+                <tr>
+                    <td>P4</td>
+                    <td id="p4-r0">0</td>
+                    <td id="p4-r1">0</td>
+                    <td id="p4-r2">2</td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="button" onclick="simulateDeadlockDetection()">Detect Deadlock</button>
+    </div>
+
+    <script>
+        function simulateDeadlockDetection() {
+            var processes = ['P0', 'P1', 'P2', 'P3', 'P4'];
+            var resources = ['R0', 'R1', 'R2'];
+            var allocation = [
+                [0, 1, 0],
+                [2, 0, 0],
+                [3, 0, 2],
+                [2, 1, 1],
+                [0, 0, 2]
+            ];
+            var maxDemand = [
+                [7, 5, 3],
+                [3, 2, 2],
+                [9, 0, 2],
+                [2, 2, 2],
+                [4, 3, 3]
+            ];
+
+            var work = resources.slice();
+            var finish = new Array(processes.length).fill(false);
+            var need = calculateNeed();
+
+            var table = document.getElementsByClassName('table')[0];
+
+            function calculateNeed() {
+                var need = [];
+                for (var i = 0; i < processes.length; i++) {
+                    need[i] = [];
+                    for (var j = 0; j < resources.length; j++) {
+                        need[i][j] = maxDemand[i][j] - allocation[i][j];
+                    }
+                }
+                return need;
+            }
+
+            function updateTable() {
+                for (var i = 0; i < processes.length; i++) {
+                    for (var j = 0; j < resources.length; j++) {
+                        var cell = document.getElementById('p' + i + '-r' + j);
+                        cell.textContent = allocation[i][j];
+                    }
+                }
+            }
+
+            function highlightRow(row) {
+                for (var i = 0; i < resources.length; i++) {
+                    var cell = row.cells[i + 1];
+                    cell.classList.add('highlight');
+                }
+            }
+
+            function removeHighlight() {
+                var cells = table.getElementsByTagName('td');
+                for (var i = 0; i < cells.length; i++) {
+                    cells[i].classList.remove('highlight');
+                }
+            }
+
+            function deadlockDetected() {
+                removeHighlight();
+                alert('Deadlock detected!');
+            }
+
+            function safeSequenceFound(safeSequence) {
+                removeHighlight();
+                var sequence = safeSequence.join(' &rarr; ');
+                alert('Safe sequence: ' + sequence);
+            }
+
+            var index = 0;
+            function detectDeadlock() {
+                if (index >= processes.length) {
+                    safeSequenceFound([]);
+                    return;
+                }
+
+                var process = processes[index];
+                var row = table.rows[index + 1];
+
+                if (finish[index]) {
+                    index++;
+                    detectDeadlock();
+                    return;
+                }
+
+                if (checkNeedLessThanWork(index)) {
+                    highlightRow(row);
+                    finish[index] = true;
+                    for (var j = 0; j < resources.length; j++) {
+                        work[j] += allocation[index][j];
+                    }
+                    index++;
+                    setTimeout(detectDeadlock, 1000);
+                } else {
+                    if (index === processes.length - 1) {
+                        deadlockDetected();
+                    } else {
+                        index++;
+                        detectDeadlock();
+                    }
+                }
+            }
+
+            function checkNeedLessThanWork(processIndex) {
+                for (var i = 0; i < resources.length; i++) {
+                    if (need[processIndex][i] > work[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            updateTable();
+            index = 0;
+            detectDeadlock();
+        }
+    </script>
+</body>
+</html>

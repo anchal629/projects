@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Banker's Algorithm Simulation</title>
+  <style>
+    /* Add some basic styling */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h2 {
+      text-align: center;
+    }
+    table {
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    caption {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .process-row td input[type="number"] {
+      width: 40px;
+    }
+    .process-row td span {
+      display: inline-block;
+      padding: 2px 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #f2f2f2;
+    }
+    .process-row td input[type="checkbox"] {
+      margin: 0 auto;
+      display: block;
+    }
+    button {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      background-color: #4CAF50;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Banker's Algorithm Simulation</h2>
+
+  <table>
+    <caption>Available Resources</caption>
+    <tr>
+      <th>Resource</th>
+      <th>Available</th>
+    </tr>
+    <tr>
+      <td>R1</td>
+      <td id="r1-available">3</td>
+    </tr>
+    <tr>
+      <td>R2</td>
+      <td id="r2-available">3</td>
+    </tr>
+    <tr>
+      <td>R3</td>
+      <td id="r3-available">2</td>
+    </tr>
+  </table>
+
+  <table>
+    <caption>Processes</caption>
+    <tr>
+      <th>Process</th>
+      <th>Allocation</th>
+      <th>Max</th>
+      <th>Need</th>
+      <th>Finish</th>
+    </tr>
+    <tr class="process-row">
+      <td>P0</td>
+      <td>
+        <input type="number" id="p0-alloc-r1" value="0" min="0" max="3" step="1">
+        <input type="number" id="p0-alloc-r2" value="1" min="0" max="3" step="1">
+        <input type="number" id="p0-alloc-r3" value="0" min="0" max="2" step="1">
+      </td>
+      <td>
+        <input type="number" id="p0-max-r1" value="7" min="0" max="7" step="1">
+        <input type="number" id="p0-max-r2" value="5" min="0" max="5" step="1">
+        <input type="number" id="p0-max-r3" value="3" min="0" max="3" step="1">
+      </td>
+      <td>
+        <span id="p0-need-r1">7</span>
+        <span id="p0-need-r2">4</span>
+        <span id="p0-need-r3">3</span>
+      </td>
+      <td>
+        <input type="checkbox" id="p0-finish">
+      </td>
+    </tr>
+    <tr class="process-row">
+      <td>P1</td>
+      <td>
+        <input type="number" id="p1-alloc-r1" value="2" min="0" max="3" step="1">
+        <input type="number" id="p1-alloc-r2" value="0" min="0" max="3" step="1">
+        <input type="number" id="p1-alloc-r3" value="0" min="0" max="2" step="1">
+      </td>
+      <td>
+        <input type="number" id="p1-max-r1" value="3" min="0" max="7" step="1">
+        <input type="number" id="p1-max-r2" value="2" min="0" max="5" step="1">
+        <input type="number" id="p1-max-r3" value="2" min="0" max="3" step="1">
+      </td>
+      <td>
+        <span id="p1-need-r1">1</span>
+        <span id="p1-need-r2">2</span>
+        <span id="p1-need-r3">2</span>
+      </td>
+      <td>
+        <input type="checkbox" id="p1-finish">
+      </td>
+    </tr>
+    <!-- Add more rows for additional processes -->
+  </table>
+
+  <button onclick="runBankersAlgorithm()">Run Banker's Algorithm</button>
+
+  <script>
+    function runBankersAlgorithm() {
+      // Get available resources
+      const r1Available = parseInt(document.getElementById("r1-available").innerText);
+      const r2Available = parseInt(document.getElementById("r2-available").innerText);
+      const r3Available = parseInt(document.getElementById("r3-available").innerText);
+
+      // Get process information
+      const processes = [
+        {
+          name: "P0",
+          alloc: [
+            parseInt(document.getElementById("p0-alloc-r1").value),
+            parseInt(document.getElementById("p0-alloc-r2").value),
+            parseInt(document.getElementById("p0-alloc-r3").value)
+          ],
+          max: [
+            parseInt(document.getElementById("p0-max-r1").value),
+            parseInt(document.getElementById("p0-max-r2").value),
+            parseInt(document.getElementById("p0-max-r3").value)
+          ],
+          need: [
+            parseInt(document.getElementById("p0-need-r1").innerText),
+            parseInt(document.getElementById("p0-need-r2").innerText),
+            parseInt(document.getElementById("p0-need-r3").innerText)
+          ],
+          finish: document.getElementById("p0-finish").checked
+        },
+        {
+          name: "P1",
+          alloc: [
+            parseInt(document.getElementById("p1-alloc-r1").value),
+            parseInt(document.getElementById("p1-alloc-r2").value),
+            parseInt(document.getElementById("p1-alloc-r3").value)
+          ],
+          max: [
+            parseInt(document.getElementById("p1-max-r1").value),
+            parseInt(document.getElementById("p1-max-r2").value),
+            parseInt(document.getElementById("p1-max-r3").value)
+          ],
+          need: [
+            parseInt(document.getElementById("p1-need-r1").innerText),
+            parseInt(document.getElementById("p1-need-r2").innerText),
+            parseInt(document.getElementById("p1-need-r3").innerText)
+          ],
+          finish: document.getElementById("p1-finish").checked
+        }
+        // Add more objects for additional processes
+      ];
+
+      // Perform the Banker's algorithm
+      let safeSequence = [];
+      let finishedProcesses = 0;
+
+      while (finishedProcesses < processes.length) {
+        let foundSafe = false;
+
+        for (let i = 0; i < processes.length; i++) {
+          const process = processes[i];
+
+          if (!process.finish && checkNeedLessOrEqual(process.need, [r1Available, r2Available, r3Available])) {
+            // Add the process to the safe sequence
+            safeSequence.push(process.name);
+
+            // Release allocated resources
+            r1Available += process.alloc[0];
+            r2Available += process.alloc[1];
+            r3Available += process.alloc[2];
+
+            // Mark the process as finished
+            process.finish = true;
+            finishedProcesses++;
+
+            // Update available resources for other processes
+            updateAvailableResources(processes);
+
+            foundSafe = true;
+          }
+        }
+
+        if (!foundSafe) {
+          // The system is in an unsafe state
+          console.log("Unsafe state: Unable to find a safe sequence.");
+          break;
+        }
+      }
+
+      // Display the safe sequence
+      console.log("Safe sequence:", safeSequence);
+    }
+
+    function checkNeedLessOrEqual(need, available) {
+      for (let i = 0; i < need.length; i++) {
+        if (need[i] > available[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function updateAvailableResources(processes) {
+      for (let i = 0; i < processes.length; i++) {
+        const process = processes[i];
+
+        if (!process.finish) {
+          for (let j = 0; j < process.alloc.length; j++) {
+            process.need[j] = process.max[j] - process.alloc[j];
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
